@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grpc-server-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grpc-server
+  template:
+    metadata:
+      labels:
+        app: grpc-server
+    spec:
+      containers:
+      - image: gcr.io/PROJECT_ID/grpc-alts:1.0.0
+        command:
+          - /server
+        imagePullPolicy: Always
+        env:
+          - name: GRPC_GO_LOG_VERBOSITY_LEVEL
+            value: "99"
+          - name: GRPC_GO_LOG_SEVERITY_LEVEL
+            value: "info"
+#        resources:
+#          limits:
+#            cpu: "0.5"
+#          requests:
+#            cpu: "0.25"
+        name: grpc-server
+        ports:
+        - containerPort: 50051

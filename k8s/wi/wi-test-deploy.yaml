@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: workload-identity-test
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: workload-identity-test
+  template:
+    metadata:
+      labels:
+        app: workload-identity-test
+    spec:
+      serviceAccount: alts-client
+      containers:
+        - name: workload-identity-test
+          image: google/cloud-sdk
+          command:
+            - /bin/bash
+            - -c
+          args:
+            - |
+              while true;
+              do
+                DATE=$(date)
+                echo "==$DATE - start test"
+                echo "==gcloud auth list"
+                gcloud auth list
+                echo "==gcloud TOKEN first 10 characters"
+                TOKEN=$(gcloud auth print-access-token)
+                echo -n ${TOKEN:0:5}
+                echo "..."
+                echo "==gcloud tokeninfo"
+                curl "https://oauth2.googleapis.com/tokeninfo?access_token=$TOKEN" 2>/dev/null
+                echo "==curl MDS SA email"
+                MDS_EMAIL=$(curl -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/email 2>/dev/null)
+                echo $MDS_EMAIL
+                echo "==curl MDS SA token"
+                MDS_TOKEN=$(curl -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token 2>/dev/null)
+                echo -n ${MDS_TOKEN:0:22}
+                echo "..."
+                echo "==curl MDS SA tokeninfo"
+                MDS_TOKEN=$(echo $MDS_TOKEN | cut -d ":" -f 2 | sed s/'["}]'/''/g)
+                curl "https://oauth2.googleapis.com/tokeninfo?access_token=$MDS_TOKEN" 2>/dev/null
+                DATE=$(date)
+                echo "==$DATE - end test"
+                sleep 10
+              done
+          resources:
+            limits:
+              memory: 256Mi
+              cpu: 100m
+            requests:
+              memory: 256Mi
+              cpu: 100m

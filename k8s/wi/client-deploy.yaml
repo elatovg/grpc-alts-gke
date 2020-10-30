@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grpc-client-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grpc-client
+  template:
+    metadata:
+      labels:
+        app: grpc-client
+    spec:
+      serviceAccountName: alts-client
+      containers:
+      - image: gcr.io/PROJECT_ID/grpc-alts:1.0.0
+        command:
+          - /client 
+        args:
+          - --addr=grpc-server-service.default.svc.cluster.local:50051
+          - --targetServiceAccount=SERVER_SERVICE_ACCOUNT
+        imagePullPolicy: Always
+        env:
+          - name: GRPC_GO_LOG_VERBOSITY_LEVEL
+            value: "99"
+          - name: GRPC_GO_LOG_SEVERITY_LEVEL
+            value: "info"
+#        resources:
+#          limits:
+#            cpu: "0.5"
+#          requests:
+#            cpu: "0.25"
+        name: grpc-client
+        ports:
+        - containerPort: 50051
